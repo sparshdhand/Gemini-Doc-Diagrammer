@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Analyzer - AI-Powered Diagram Generation</title>
+  <meta name="description" content="Transform your PDF and DOCX documents into visual ASCII diagrams using advanced AI analysis">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --background: hsl(240, 25%, 98%);
+      --foreground: hsl(240, 10%, 10%);
+      --card: hsl(0, 0%, 100%);
+      --card-foreground: hsl(240, 10%, 10%);
+      --primary: hsl(262, 83%, 58%);
+      --primary-foreground: hsl(0, 0%, 100%);
+      --muted: hsl(240, 4.8%, 95.9%);
+      --muted-foreground: hsl(240, 3.8%, 46.1%);
+      --border: hsl(240, 5.9%, 90%);
+      --radius: 1rem;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 3rem;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .header-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(220, 90%, 56%));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px -8px hsl(262, 83%, 58%, 0.15);
+    }
+
+    .header-icon svg {
+      width: 24px;
+      height: 24px;
+      color: white;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(220, 90%, 56%));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header p {
+      font-size: 1.125rem;
+      color: var(--muted-foreground);
+      margin-left: 60px;
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 1024px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* File Uploader */
+    .uploader {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.5rem;
+      border: 2px dashed var(--border);
+      background: hsla(0, 0%, 100%, 0.5);
+      backdrop-filter: blur(10px);
+      padding: 3rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      animation: slideUp 0.4s ease-out;
+    }
+
+    .uploader:hover {
+      border-color: var(--primary);
+      box-shadow: 0 8px 32px -8px hsl(262, 83%, 58%, 0.15);
+    }
+
+    .uploader.dragging {
+      border-color: var(--primary);
+      background: hsla(262, 83%, 58%, 0.05);
+      box-shadow: 0 8px 32px -8px hsl(262, 83%, 58%, 0.15);
+      transform: scale(1.02);
+    }
+
+    .uploader-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      border-radius: 1.5rem;
+      background: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(220, 90%, 56%));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px -4px hsl(262, 83%, 58%, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .uploader:hover .uploader-icon {
+      transform: scale(1.1);
+      box-shadow: 0 8px 32px -8px hsl(262, 83%, 58%, 0.15);
+    }
+
+    .uploader-icon svg {
+      width: 40px;
+      height: 40px;
+      color: white;
+    }
+
+    .uploader h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .uploader p {
+      color: var(--muted-foreground);
+      font-size: 0.875rem;
+    }
+
+    /* Input Section */
+    .input-section {
+      background: hsla(0, 0%, 100%, 0.3);
+      backdrop-filter: blur(10px);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      border: 2px solid hsla(240, 5.9%, 90%, 0.5);
+      box-shadow: 0 4px 16px -4px hsl(262, 83%, 58%, 0.1);
+      animation: slideUp 0.4s ease-out 0.1s both;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+
+    .label svg {
+      width: 16px;
+      height: 16px;
+      color: var(--primary);
+    }
+
+    .label-optional {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      font-weight: 400;
+      margin-left: 0.25rem;
+    }
+
+    .select, .textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      border: 2px solid var(--border);
+      background: hsla(0, 0%, 100%, 0.5);
+      backdrop-filter: blur(10px);
+      font-family: inherit;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    .select {
+      height: 48px;
+      cursor: pointer;
+    }
+
+    .textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .select:hover, .textarea:hover {
+      border-color: var(--primary);
+    }
+
+    .select:focus, .textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px hsla(262, 83%, 58%, 0.1);
+    }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      height: 48px;
+      border-radius: 0.75rem;
+      border: none;
+      background: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(220, 90%, 56%));
+      color: white;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 8px 32px -8px hsl(262, 83%, 58%, 0.15);
+    }
+
+    .btn:hover:not(:disabled) {
+      opacity: 0.9;
+      box-shadow: 0 16px 48px -12px hsl(262, 83%, 58%, 0.2);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .btn.loading svg {
+      animation: spin 1s linear infinite;
+    }
+
+    /* Response Card */
+    .response-card {
+      border-radius: 1.5rem;
+      border: 2px solid var(--border);
+      background: hsla(0, 0%, 100%, 0.5);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 16px -4px hsl(262, 83%, 58%, 0.1);
+      overflow: hidden;
+      animation: scaleIn 0.3s ease-out 0.2s both;
+    }
+
+    .response-header {
+      padding: 1.5rem;
+      border-bottom: 2px solid var(--border);
+      background: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(240, 25%, 98%));
+    }
+
+    .response-header h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .response-header svg {
+      width: 20px;
+      height: 20px;
+      color: var(--primary);
+    }
+
+    .response-content {
+      padding: 1.5rem;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .response-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 500px;
+      text-align: center;
+      gap: 0.75rem;
+    }
+
+    .response-empty-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 1rem;
+      background: hsla(240, 4.8%, 95.9%, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .response-empty-icon svg {
+      width: 32px;
+      height: 32px;
+      color: var(--muted-foreground);
+    }
+
+    .response-empty p {
+      color: var(--muted-foreground);
+    }
+
+    .response-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 500px;
+      gap: 1rem;
+    }
+
+    .response-loading-icon {
+      position: relative;
+      width: 64px;
+      height: 64px;
+    }
+
+    .response-loading-icon-bg {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(220, 90%, 56%));
+      opacity: 0.2;
+      animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    .response-loading-icon-main {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 1rem;
+      background: linear-gradient(135deg, hsl(262, 83%, 58%), hsl(220, 90%, 56%));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .response-loading-icon-main svg {
+      width: 32px;
+      height: 32px;
+      color: white;
+      animation: spin 1s linear infinite;
+    }
+
+    .response-loading p {
+      color: var(--muted-foreground);
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    pre {
+      background: hsla(240, 4.8%, 95.9%, 0.3);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    code {
+      font-family: inherit;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes ping {
+      75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+          </svg>
+        </div>
+        <h1>Document Analyzer</h1>
+      </div>
+      <p>Transform documents into visual diagrams with AI</p>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid">
+      <!-- Left Column -->
+      <div>
+        <!-- File Uploader -->
+        <div id="uploader" class="uploader">
+          <div class="uploader-icon">
+            <svg id="uploaderIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+          <h3 id="uploaderTitle">Drop your document here</h3>
+          <p id="uploaderText">or click to browse • PDF or DOCX</p>
+          <input type="file" id="fileInput" accept=".pdf,.docx" class="hidden">
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section" style="margin-top: 1.5rem;">
+          <!-- Model Selector -->
+          <div class="form-group">
+            <label class="label">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+              AI Model
+            </label>
+            <select id="model" class="select">
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash - Fast and efficient</option>
+              <option value="gemini-2.0-pro">Gemini 2.0 Pro - Advanced analysis</option>
+            </select>
+          </div>
+
+          <!-- Prompt Input -->
+          <div class="form-group">
+            <label class="label">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              Additional Instructions
+              <span class="label-optional">(optional)</span>
+            </label>
+            <textarea id="prompt" class="textarea" placeholder="E.g., focus on the API layer changes, highlight key relationships..."></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="form-group">
+            <button id="submitBtn" class="btn" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+              Analyze Document
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div>
+        <div class="response-card">
+          <div class="response-header">
+            <h3>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              Analysis Result
+            </h3>
+          </div>
+          <div id="responseContent" class="response-content">
+            <div class="response-empty">
+              <div class="response-empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+              </div>
+              <p>Upload a document to see the analysis here</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const uploader = document.getElementById('uploader');
+      const fileInput = document.getElementById('fileInput');
+      const uploaderTitle = document.getElementById('uploaderTitle');
+      const uploaderText = document.getElementById('uploaderText');
+      const uploaderIcon = document.getElementById('uploaderIcon');
+      const model = document.getElementById('model');
+      const prompt = document.getElementById('prompt');
+      const submitBtn = document.getElementById('submitBtn');
+      const responseContent = document.getElementById('responseContent');
+
+      let selectedFile = null;
+
+      // Update uploader UI
+      function updateUploaderUI() {
+        if (selectedFile) {
+          uploaderTitle.textContent = selectedFile.name;
+          uploaderText.textContent = `${(selectedFile.size / 1024).toFixed(1)} KB • Click to change`;
+          uploaderIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />';
+          submitBtn.disabled = false;
+        } else {
+          uploaderTitle.textContent = 'Drop your document here';
+          uploaderText.textContent = 'or click to browse • PDF or DOCX';
+          uploaderIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />';
+          submitBtn.disabled = true;
+        }
+      }
+
+      // Handle file selection
+      function handleFile(file) {
+        if (!file) return;
+        
+        const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!validTypes.includes(file.type) && !/\.pdf$|\.docx$/i.test(file.name)) {
+          alert('Please select a PDF or DOCX file.');
+          return;
+        }
+        
+        selectedFile = file;
+        updateUploaderUI();
+      }
+
+      // Click to upload
+      uploader.addEventListener('click', () => fileInput.click());
+
+      // File input change
+      fileInput.addEventListener('change', (e) => {
+        handleFile(e.target.files[0]);
+      });
+
+      // Drag and drop
+      uploader.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploader.classList.add('dragging');
+      });
+
+      uploader.addEventListener('dragleave', () => {
+        uploader.classList.remove('dragging');
+      });
+
+      uploader.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploader.classList.remove('dragging');
+        handleFile(e.dataTransfer.files[0]);
+      });
+
+      // Submit analysis
+      submitBtn.addEventListener('click', async () => {
+        if (!selectedFile) return;
+
+        submitBtn.disabled = true;
+        submitBtn.classList.add('loading');
+        submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg> Analyzing...';
+
+        responseContent.innerHTML = `
+          <div class="response-loading">
+            <div class="response-loading-icon">
+              <div class="response-loading-icon-bg"></div>
+              <div class="response-loading-icon-main">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+            </div>
+            <p>Analyzing document...</p>
+          </div>
+        `;
+
+        try {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          formData.append('user_prompt', prompt.value || '');
+          formData.append('model', model.value);
+
+          const res = await fetch('/api/analyze', {
+            method: 'POST',
+            body: formData
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(JSON.stringify(data, null, 2));
+          }
+
+          responseContent.innerHTML = `<pre><code>${escapeHtml(data.response)}</code></pre>`;
+        } catch (error) {
+          responseContent.innerHTML = `<pre><code>// Error\n${escapeHtml(error.message)}</code></pre>`;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('loading');
+          submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg> Analyze Document';
+        }
+      });
+
+      // Escape HTML helper
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    })();
+  </script>
+</body>
+</html>
