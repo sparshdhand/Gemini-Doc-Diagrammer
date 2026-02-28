@@ -1,5 +1,9 @@
 # Gemini Doc Diagrammer (Document Analyzer) — AI-Powered ASCII Diagrams
 
+## ❌ PROJECT ARCHIVED
+
+This project has been archived due to discontinuation of Gemini 2.0.
+
 Transform PDF/DOCX documents into clear ASCII diagrams using Google AI Studio (Gemini). Upload a file, optionally add extra instructions, and get a formatted code block that visualizes classes, relationships, and changes—bounded by 60-underscore lines.
 
 ## Features
@@ -110,4 +114,5 @@ MIT
 - Streaming responses (SSE).
 - Multi-file analysis and comparison.
 - Download diagram as .txt.
+
 - Optional native Gemini File API integration.
